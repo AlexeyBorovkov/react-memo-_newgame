@@ -36,6 +36,9 @@ function getTimerValue(startDate, endDate) {
   };
 }
 
+function getLivesHearts(lives) {
+  return Array.from({ length: lives }, () => "❤️").join(" ");
+}
 /**
  * Основной компонент игры, внутри него находится вся игровая механика и логика.
  * pairsCount - сколько пар будет в игре
@@ -50,6 +53,9 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   // lives
   const { lives, setLives } = useContext(LivesContext);
 
+  const [isEasyMode, setIsEasyMode] = useState(false);
+
+  const toggleEasyMode = () => setIsEasyMode(!isEasyMode);
   // Дата начала игры
   const [gameStartDate, setGameStartDate] = useState(null);
   // Дата конца игры
@@ -249,6 +255,10 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           )}
         </div>
         {status === STATUS_IN_PROGRESS ? <Button onClick={resetGame}>Начать заново</Button> : null}
+        <label className={styles.toggleLabel}>
+          <input type="checkbox" checked={isEasyMode} onChange={toggleEasyMode} className={styles.toggleInput} />
+          Дополнительные попытки
+        </label>
       </div>
 
       <div className={styles.cards}>
@@ -262,9 +272,9 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           />
         ))}
       </div>
-      {lives !== -1 && (
+      {isEasyMode && lives !== -1 && (
         <div>
-          <p style={{ color: "white" }}>У Вас осталось {lives} жизней</p>
+          <p style={{ color: "white" }}> HP: {getLivesHearts(lives)}</p>
         </div>
       )}
 
