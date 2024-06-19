@@ -1,19 +1,17 @@
 import { Link } from "react-router-dom";
 import styles from "./SelectLevelPage.module.css";
 import { useContext, useEffect } from "react";
-import { LevelContext } from "../../context/levelContext";
-import { LivesContext } from "../../context/livesContext";
+import { EasyModeContext } from "../../context/easymodeContext";
 
 export function SelectLevelPage() {
-  const { setLevel } = useContext(LevelContext);
-  const { setLives } = useContext(LivesContext);
+  const { setEasymode } = useContext(EasyModeContext);
 
-  const livesChangeHandler = event => {
-    setLives(event.target.checked ? 3 : 0);
+  const livesChangeHandler = () => {
+    setEasymode(true);
   };
 
   useEffect(() => {
-    setLives(0);
+    setEasymode(false);
   }, []);
 
   return (
@@ -21,26 +19,31 @@ export function SelectLevelPage() {
       <div className={styles.modal}>
         <h1 className={styles.title}>Выбери сложность</h1>
         <ul className={styles.levels}>
-          <li onClick={() => setLevel(1)} className={styles.level}>
+          <li className={styles.level}>
             <Link className={styles.levelLink} to="/game/3">
               1
             </Link>
           </li>
-          <li onClick={() => setLevel(2)} className={styles.level}>
+          <li className={styles.level}>
             <Link className={styles.levelLink} to="/game/6">
               2
             </Link>
           </li>
-          <li onClick={() => setLevel(3)} className={styles.level}>
+          <li className={styles.level}>
             <Link className={styles.levelLink} to="/game/9">
               3
             </Link>
           </li>
         </ul>
         <div className={styles.wrap}>
-          <h3 className={styles.subtitle}>Дополнительные попытки</h3>
-          <input onClick={livesChangeHandler} type="checkbox" />
+          <label className={styles.subtitle}>
+            Дополнительные попытки
+            <input onClick={livesChangeHandler} type="checkbox" />
+          </label>
         </div>
+        <Link className={styles.link} to="/leaderboard">
+          Перейти к лидерборду
+        </Link>
       </div>
     </div>
   );

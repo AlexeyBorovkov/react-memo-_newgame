@@ -6,6 +6,9 @@ import { EndGameModal } from "../../components/EndGameModal/EndGameModal";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { LivesContext } from "../../context/livesContext";
+import { EasyModeContext } from "../../context/easymodeContext";
+import { CardsContext } from "../../context/cardsContext";
+import { Hearts } from "../Hearts/Hearts";
 
 // Игра закончилась
 const STATUS_LOST = "STATUS_LOST";
@@ -36,9 +39,6 @@ function getTimerValue(startDate, endDate) {
   };
 }
 
-function getLivesHearts(lives) {
-  return Array.from({ length: lives }, () => "❤️").join(" ");
-}
 /**
  * Основной компонент игры, внутри него находится вся игровая механика и логика.
  * pairsCount - сколько пар будет в игре
@@ -46,20 +46,17 @@ function getLivesHearts(lives) {
  */
 export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   // В cards лежит игровое поле - массив карт и их состояние открыта\закрыта
-  const [cards, setCards] = useState([]);
-  const [opened, setOpened] = useState({});
+  const { cards, setCards } = useContext(CardsContext);
   // Текущий статус игры
   const [status, setStatus] = useState(STATUS_PREVIEW);
-  // lives
-  const { lives, setLives } = useContext(LivesContext);
-
-  const [isEasyMode, setIsEasyMode] = useState(false);
-
-  const toggleEasyMode = () => setIsEasyMode(!isEasyMode);
   // Дата начала игры
   const [gameStartDate, setGameStartDate] = useState(null);
   // Дата конца игры
   const [gameEndDate, setGameEndDate] = useState(null);
+  // Режим трёх попыток
+  const { easyMode } = useContext(EasyModeContext);
+  // Счетчик жизней
+  const { lives, setLives } = useContext(LivesContext);
 
   // Стейт для таймера, высчитывается в setInteval на основе gameStartDate и gameEndDate
   const [timer, setTimer] = useState({
@@ -83,21 +80,22 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     setGameEndDate(null);
     setTimer(getTimerValue(null, null));
     setStatus(STATUS_PREVIEW);
+    setLives(3);
   }
 
   /**
    * Обработка основного действия в игре - открытие карты.
-   * После открытия карты игра может переходит в следующие состояния
+   * После открытия карты игра может пепереходит в следующие состояния
    * - "Игрок выиграл", если на поле открыты все карты
    * - "Игрок проиграл", если на поле есть две открытые карты без пары
    * - "Игра продолжается", если не случилось первых двух условий
    */
   const openCard = clickedCard => {
     // Если карта уже открыта, то ничего не делаем
+
     if (clickedCard.open) {
       return;
     }
-
     // Игровое поле после открытия кликнутой карты
     const nextCards = cards.map(card => {
       if (card.id !== clickedCard.id) {
@@ -116,10 +114,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
 
     // Победа - все карты на поле открыты
     if (isPlayerWon) {
-      if (lives !== -1 && lives !== 3) {
-        setLives(3);
-      }
-
       finishGame(STATUS_WON);
       return;
     }
@@ -141,56 +135,31 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     const playerLost = openCardsWithoutPair.length >= 2;
 
     // "Игрок проиграл", т.к на поле есть две открытые карты без пары
-    if (playerLost) {
-      if (lives > 1) {
-        setLives(prev => prev - 1);
+    if (playerLost && !easyMode) {
+      finishGame(STATUS_LOST);
+      return;
+    }
 
-        return setTimeout(() => {
-          // load previous step
-          setCards(
-            cards.map((card, index) => {
-              if (opened[index]) {
-                return card;
-              }
+    // ... игра продолжается
+    if (playerLost && easyMode) {
+      setLives(lives - 1);
 
-              return {
-                ...card,
-                open: false,
-              };
-            }),
-          );
-        }, 500);
-      } else {
-        // Если у игрока осталась одна жизнь или меньше, устанавливаем количество жизней в 3
-        setLives(3);
-        // Завершаем игру со статусом проигрыша
+      nextCards.map(card => {
+        if (openCardsWithoutPair.some(opencard => opencard.id === card.id)) {
+          if (card.open) {
+            setTimeout(() => {
+              setCards(prev => {
+                return prev.map(el => (el.id === card.id ? { ...el, open: false } : el));
+              });
+            }, 1000);
+          }
+        }
+      });
+      if (lives === 1) {
         finishGame(STATUS_LOST);
         return;
       }
     }
-
-    // save
-    for (let i = 0; i < cards.length; ++i) {
-      const firstCard = cards[i];
-
-      if (!firstCard.open || opened[i]) {
-        continue;
-      }
-
-      for (let j = i + 1; j < cards.length; ++j) {
-        const secondCard = cards[j];
-
-        if (firstCard.suit === secondCard.suit && firstCard.rank === secondCard.rank) {
-          setOpened({
-            ...opened,
-            [i]: firstCard.id,
-            [j]: secondCard.id,
-          });
-        }
-      }
-    }
-
-    // ... игра продолжается
   };
 
   const isGameEnded = status === STATUS_LOST || status === STATUS_WON;
@@ -255,12 +224,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           )}
         </div>
         {status === STATUS_IN_PROGRESS ? <Button onClick={resetGame}>Начать заново</Button> : null}
-        <label className={styles.toggleLabel}>
-          <input type="checkbox" checked={isEasyMode} onChange={toggleEasyMode} className={styles.toggleInput} />
-          Дополнительные попытки
-        </label>
       </div>
-
       <div className={styles.cards}>
         {cards.map(card => (
           <Card
@@ -272,12 +236,9 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           />
         ))}
       </div>
-      {isEasyMode && lives !== -1 && (
-        <div>
-          <p style={{ color: "white" }}> HP: {getLivesHearts(lives)}</p>
-        </div>
-      )}
+      {/* {easyMode ? <p className={styles.subtitle}>Осталось попыток: {lives}</p> : ""} */}
 
+      {easyMode ? <Hearts lives={lives} /> : ""}
       {isGameEnded ? (
         <div className={styles.modalContainer}>
           <EndGameModal
@@ -285,6 +246,8 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
             gameDurationSeconds={timer.seconds}
             gameDurationMinutes={timer.minutes}
             onClick={resetGame}
+            pairsCount={pairsCount}
+            timer={timer}
           />
         </div>
       ) : null}
