@@ -236,7 +236,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           />
         ))}
       </div>
-      {/* {easyMode ? <p className={styles.subtitle}>Осталось попыток: {lives}</p> : ""} */}
 
       {easyMode ? <Hearts lives={lives} /> : ""}
       {isGameEnded ? (
