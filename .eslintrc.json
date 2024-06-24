@@ -6,6 +6,5 @@
     "prettier/prettier": "error",
     "eqeqeq": ["error", "always"],
     "no-unused-vars": ["error"]
-  
   }
 }

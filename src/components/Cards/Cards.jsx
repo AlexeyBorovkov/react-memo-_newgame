@@ -1,10 +1,14 @@
 import { shuffle } from "lodash";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { generateDeck } from "../../utils/cards";
 import styles from "./Cards.module.css";
 import { EndGameModal } from "../../components/EndGameModal/EndGameModal";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
+import { LivesContext } from "../../context/livesContext";
+import { EasyModeContext } from "../../context/easymodeContext";
+import { CardsContext } from "../../context/cardsContext";
+import { Hearts } from "../Hearts/Hearts";
 
 // Игра закончилась
 const STATUS_LOST = "STATUS_LOST";
@@ -42,14 +46,17 @@ function getTimerValue(startDate, endDate) {
  */
 export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   // В cards лежит игровое поле - массив карт и их состояние открыта\закрыта
-  const [cards, setCards] = useState([]);
+  const { cards, setCards } = useContext(CardsContext);
   // Текущий статус игры
   const [status, setStatus] = useState(STATUS_PREVIEW);
-
   // Дата начала игры
   const [gameStartDate, setGameStartDate] = useState(null);
   // Дата конца игры
   const [gameEndDate, setGameEndDate] = useState(null);
+  // Режим трёх попыток
+  const { easyMode } = useContext(EasyModeContext);
+  // Счетчик жизней
+  const { lives, setLives } = useContext(LivesContext);
 
   // Стейт для таймера, высчитывается в setInteval на основе gameStartDate и gameEndDate
   const [timer, setTimer] = useState({
@@ -73,6 +80,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     setGameEndDate(null);
     setTimer(getTimerValue(null, null));
     setStatus(STATUS_PREVIEW);
+    setLives(3);
   }
 
   /**
@@ -84,6 +92,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
    */
   const openCard = clickedCard => {
     // Если карта уже открыта, то ничего не делаем
+
     if (clickedCard.open) {
       return;
     }
@@ -126,12 +135,31 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     const playerLost = openCardsWithoutPair.length >= 2;
 
     // "Игрок проиграл", т.к на поле есть две открытые карты без пары
-    if (playerLost) {
+    if (playerLost && !easyMode) {
       finishGame(STATUS_LOST);
       return;
     }
 
     // ... игра продолжается
+    if (playerLost && easyMode) {
+      setLives(lives - 1);
+
+      nextCards.map(card => {
+        if (openCardsWithoutPair.some(opencard => opencard.id === card.id)) {
+          if (card.open) {
+            setTimeout(() => {
+              setCards(prev => {
+                return prev.map(el => (el.id === card.id ? { ...el, open: false } : el));
+              });
+            }, 1000);
+          }
+        }
+      });
+      if (lives === 1) {
+        finishGame(STATUS_LOST);
+        return;
+      }
+    }
   };
 
   const isGameEnded = status === STATUS_LOST || status === STATUS_WON;
@@ -197,7 +225,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
         </div>
         {status === STATUS_IN_PROGRESS ? <Button onClick={resetGame}>Начать заново</Button> : null}
       </div>
-
       <div className={styles.cards}>
         {cards.map(card => (
           <Card
@@ -210,6 +237,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
         ))}
       </div>
 
+      {easyMode ? <Hearts lives={lives} /> : ""}
       {isGameEnded ? (
         <div className={styles.modalContainer}>
           <EndGameModal
@@ -217,6 +245,8 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
             gameDurationSeconds={timer.seconds}
             gameDurationMinutes={timer.minutes}
             onClick={resetGame}
+            pairsCount={pairsCount}
+            timer={timer}
           />
         </div>
       ) : null}
