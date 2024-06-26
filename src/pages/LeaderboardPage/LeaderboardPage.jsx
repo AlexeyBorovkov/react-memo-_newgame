@@ -7,6 +7,7 @@ import { getLeaders } from "../../api/leaders";
 import { LeadersContext } from "../../context/leaderboardContext";
 import { sortLeadersElements } from "../../utils/helpers";
 
+// компонент таблицы
 export function LeaderboardPage() {
   const { leaders, setLeaders } = useContext(LeadersContext);
 
