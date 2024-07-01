@@ -4,10 +4,10 @@ import { useContext, useEffect } from "react";
 import { EasyModeContext } from "../../context/easymodeContext";
 
 export function SelectLevelPage() {
-  const { easyMode, setEasymode } = useContext(EasyModeContext);
+  const { setEasymode } = useContext(EasyModeContext);
 
-  const livesChangeHandler = event => {
-    setEasymode(event.target.checked);
+  const checkbox = () => {
+    setEasymode(true);
   };
 
   useEffect(() => {
@@ -36,10 +36,8 @@ export function SelectLevelPage() {
           </li>
         </ul>
         <div className={styles.wrap}>
-          <label className={styles.subtitle}>
-            Дополнительные попытки
-            <input onChange={livesChangeHandler} type="checkbox" checked={easyMode} />
-          </label>
+          <h3 className={styles.subtitle}>Упрощенный режим(3 жизни)</h3>
+          <input onClick={checkbox} type="checkbox" />
         </div>
         <Link className={styles.link} to="/leaderboard">
           Перейти к лидерборду

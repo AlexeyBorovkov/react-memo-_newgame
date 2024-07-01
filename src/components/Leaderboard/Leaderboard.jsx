@@ -6,7 +6,7 @@ import magicBallActivImageUrl from "./images/magic-ball-activ.png";
 import superPowers from "./images/super-powers.png";
 import hardMode from "./images/hard-mode.png";
 
-export const Leaderboard = ({ position, user, time, achievements = [], color = "black" }) => {
+export const Leaderboard = ({ position, user, time, achievements, color = "black" }) => {
   const achieveImg = achievements.includes(1) ? vectorActivImageUrl : vectorImageUrl;
 
   const achieveImg2 = achievements.includes(2) ? magicBallActivImageUrl : magicBallImageUrl;

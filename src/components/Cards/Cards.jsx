@@ -212,10 +212,19 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
 
   const onAlohomora = () => {
     setIsActivAlohomora(true);
-    const firstCard = cards.find(card => card.open === false);
+
+    const firstCard = cards.find(card => !card.open);
+
+    if (!firstCard) return;
+
     const newCards = cards.map(card => {
-      return card.suit === firstCard.suit && card.rank === firstCard.rank ? { ...card, open: true } : card;
+      // Проверяем, что card и firstCard определены и имеют свойства suit и rank
+      if (card && firstCard && card.suit === firstCard.suit && card.rank === firstCard.rank) {
+        return { ...card, open: true };
+      }
+      return card;
     });
+
     const isGameOver = newCards.some(item => !item.open);
     setCards(newCards);
     if (!isGameOver) {
