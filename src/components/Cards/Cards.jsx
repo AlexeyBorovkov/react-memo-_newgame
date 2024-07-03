@@ -8,9 +8,8 @@ import { Card } from "../../components/Card/Card";
 import { LivesContext } from "../../context/livesContext";
 import { EasyModeContext } from "../../context/easymodeContext";
 import { CardsContext } from "../../context/cardsContext";
-import { Hearts } from "../Hearts/Hearts";
 import alohomora from "./images/alohomora.png";
-import epiphany from "./images/epiphany.png";
+import { Hearts } from "../Hearts/Hearts";
 
 // Игра закончилась
 const STATUS_LOST = "STATUS_LOST";
@@ -19,6 +18,8 @@ const STATUS_WON = "STATUS_WON";
 const STATUS_IN_PROGRESS = "STATUS_IN_PROGRESS";
 // Начало игры: игрок видит все карты в течении нескольких секунд
 const STATUS_PREVIEW = "STATUS_PREVIEW";
+
+// const STATUS_PAUSED = "STATUS_PAUSED";
 
 function getTimerValue(startDate, endDate) {
   if (!startDate && !endDate) {
@@ -53,6 +54,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   const [status, setStatus] = useState(STATUS_PREVIEW);
   // Дата начала игры
   const [gameStartDate, setGameStartDate] = useState(null);
+  // console.log(gameStartDate);
   // Дата конца игры
   const [gameEndDate, setGameEndDate] = useState(null);
   // Режим трёх попыток
@@ -60,17 +62,18 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   // Счетчик жизней
   const { lives, setLives } = useContext(LivesContext);
 
+  // const [isActivEpiphany, setIsActivEpiphany] = useState(false);
+
   const [isActivAlohomora, setIsActivAlohomora] = useState(false);
 
-  const [isEpiphanyActive, setIsEpiphanyActive] = useState(false);
-
-  const [epiphanyUsed, setEpiphanyUsed] = useState(false);
+  // const [isPaused, setIsPaused] = useState(false);
 
   // Стейт для таймера, высчитывается в setInteval на основе gameStartDate и gameEndDate
   const [timer, setTimer] = useState({
     seconds: 0,
     minutes: 0,
   });
+  // console.log(timer);
 
   function finishGame(status = STATUS_LOST) {
     setGameEndDate(new Date());
@@ -90,7 +93,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     setStatus(STATUS_PREVIEW);
     setLives(3);
     setIsActivAlohomora(false);
-    setEpiphanyUsed(false);
   }
 
   /**
@@ -102,7 +104,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
    */
   const openCard = clickedCard => {
     // Если карта уже открыта, то ничего не делаем
-
     if (clickedCard.open) {
       return;
     }
@@ -134,7 +135,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     // Ищем открытые карты, у которых нет пары среди других открытых
     const openCardsWithoutPair = openCards.filter(card => {
       const sameCards = openCards.filter(openCard => card.suit === openCard.suit && card.rank === openCard.rank);
-
       if (sameCards.length < 2) {
         return true;
       }
@@ -153,7 +153,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     // ... игра продолжается
     if (playerLost && easyMode) {
       setLives(lives - 1);
-
+      // eslint-disable-next-line array-callback-return
       nextCards.map(card => {
         if (openCardsWithoutPair.some(opencard => opencard.id === card.id)) {
           if (card.open) {
@@ -208,48 +208,18 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
     return () => {
       clearInterval(intervalId);
     };
-  }, [gameStartDate, gameEndDate]);
+  }, [gameStartDate, gameEndDate, status]);
 
   const onAlohomora = () => {
     setIsActivAlohomora(true);
-
-    const firstCard = cards.find(card => !card.open);
-
-    if (!firstCard) return;
-
+    const firstCard = cards.find(card => card.open === false);
     const newCards = cards.map(card => {
-      // Проверяем, что card и firstCard определены и имеют свойства suit и rank
-      if (card && firstCard && card.suit === firstCard.suit && card.rank === firstCard.rank) {
-        return { ...card, open: true };
-      }
-      return card;
+      return card.suit === firstCard.suit && card.rank === firstCard.rank ? { ...card, open: true } : card;
     });
-
     const isGameOver = newCards.some(item => !item.open);
     setCards(newCards);
     if (!isGameOver) {
       finishGame(STATUS_WON);
-    }
-  };
-
-  const onEpiphany = () => {
-    if (!epiphanyUsed) {
-      setIsEpiphanyActive(true);
-      setEpiphanyUsed(true);
-      setCards(cards.map(card => ({ ...card, open: true })));
-      // Запоминаем текущее время начала игры
-      const currentGameStartTime = gameStartDate;
-      // Останавливаем таймер игры
-      setGameEndDate(new Date());
-
-      setTimeout(() => {
-        setIsEpiphanyActive(false);
-        setCards(cards.map(card => ({ ...card, open: false })));
-        // Восстанавливаем сохраненное время начала игры
-        setGameStartDate(currentGameStartTime);
-        // Сбрасываем дату окончания игры, чтобы таймер продолжил работу
-        setGameEndDate(null);
-      }, 5000);
     }
   };
 
@@ -289,11 +259,11 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           ""
         ) : (
           <div className={styles.superPowersContainer}>
-            <div>
+            {/* <div>
               <div className={styles.wrapper}>
                 <img
-                  onClick={!epiphanyUsed ? onEpiphany : undefined}
-                  className={epiphanyUsed || isEpiphanyActive ? styles.disabledEpiphany : styles.superPowerImg}
+                  // onClick={onEpiphany}
+                  className={isActivEpiphany ? styles.disabledEpiphany : styles.superPowerImg}
                   src={epiphany}
                   alt=""
                 />
@@ -305,11 +275,11 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
                 </div>
               </div>
               <div className={styles.layout}></div>
-            </div>
+            </div> */}
             <div className={styles.wrapper}>
               <img
                 onClick={onAlohomora}
-                className={isActivAlohomora ? styles.disabledAlohomora : styles.superPowerImg}
+                className={isActivAlohomora ? styles.disabledEpiphany : styles.superPowerImg}
                 src={alohomora}
                 alt=""
               />
@@ -322,6 +292,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
             <div className={styles.layout}></div>
           </div>
         )}
+
         {status === STATUS_IN_PROGRESS ? <Button onClick={resetGame}>Начать заново</Button> : null}
       </div>
       <div className={styles.cards}>
@@ -335,7 +306,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           />
         ))}
       </div>
-
       {easyMode ? <Hearts lives={lives} /> : ""}
       {isGameEnded ? (
         <div className={styles.modalContainer}>
@@ -346,6 +316,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
             onClick={resetGame}
             pairsCount={pairsCount}
             timer={timer}
+            achievements={achievements}
           />
         </div>
       ) : null}
