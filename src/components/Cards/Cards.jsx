@@ -62,11 +62,7 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
   // Счетчик жизней
   const { lives, setLives } = useContext(LivesContext);
 
-  // const [isActivEpiphany, setIsActivEpiphany] = useState(false);
-
   const [isActivAlohomora, setIsActivAlohomora] = useState(false);
-
-  // const [isPaused, setIsPaused] = useState(false);
 
   // Стейт для таймера, высчитывается в setInteval на основе gameStartDate и gameEndDate
   const [timer, setTimer] = useState({
@@ -259,23 +255,6 @@ export function Cards({ pairsCount = 3, previewSeconds = 5 }) {
           ""
         ) : (
           <div className={styles.superPowersContainer}>
-            {/* <div>
-              <div className={styles.wrapper}>
-                <img
-                  // onClick={onEpiphany}
-                  className={isActivEpiphany ? styles.disabledEpiphany : styles.superPowerImg}
-                  src={epiphany}
-                  alt=""
-                />
-                <div className={styles.bubble}>
-                  <h4 className={styles.title}>Прозрение</h4>
-                  <p className={styles.description}>
-                    На 5 секунд показываются все карты. Таймер длительности игры на это время останавливается.
-                  </p>
-                </div>
-              </div>
-              <div className={styles.layout}></div>
-            </div> */}
             <div className={styles.wrapper}>
               <img
                 onClick={onAlohomora}

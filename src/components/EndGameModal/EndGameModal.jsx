@@ -43,20 +43,35 @@ export function EndGameModal({
 
   const [error, setError] = useState("");
 
-  const onLeaders = () => {
+  // const onLeaders = () => {
+  //   const resultLeaderboard = {
+  //     name: inputLeaders,
+  //     time: timeLeaders,
+  //     achievements: achievements,
+  //   };
+
+  //   postLeaders({ resultLeaderboard })
+  //     .then(res => {
+  //       console.log(res);
+  //     })
+  //     .catch(err => {
+  //       setError(err.message);
+  //     });
+  // };
+  const onLeaders = async () => {
     const resultLeaderboard = {
       name: inputLeaders,
       time: timeLeaders,
       achievements: achievements,
     };
 
-    postLeaders({ resultLeaderboard })
-      .then(res => {
-        console.log(res);
-      })
-      .catch(err => {
-        setError(err.message);
-      });
+    try {
+      const res = await postLeaders({ resultLeaderboard });
+      console.log(res);
+      navigate("/leaderboard");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -76,13 +91,13 @@ export function EndGameModal({
           />
           <Button
             className={styles.btn}
-            onClick={e => {
+            onClick={async e => {
               e.preventDefault();
               if (!inputLeaders.trim()) {
                 setError("Введите имя");
                 return;
               }
-              onLeaders();
+              await onLeaders();
               setInputLeaders("");
               navigate("/leaderboard");
             }}
